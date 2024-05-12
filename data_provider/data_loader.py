@@ -187,6 +187,72 @@ class Dataset_ETT_hour(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
+class Dataset_ECG_chapman(Dataset):
+    def __init__(self, root_path, flag='train', size=None,
+                 features='All', data_path='Diagnostics.xlsx',
+                 target='Rhythm', scale=True, timeenc=0, freq='h', 
+                 percent=100, data_name = 'ecg_chapman', max_len=-1, train_all=False):
+
+        assert flag in ['train', 'test', 'val']
+        type_map = {'train': 0, 'val': 1, 'test': 2}
+        self.set_type = type_map[flag]
+
+        self.percent = percent
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+
+        self.root_path = root_path
+        self.data_path = data_path
+        self.data_name = data_name
+        self.rhythm_map_path = "RhythmNames.xlsx"
+
+        self.__read_data__()
+
+        self.tot_len = len(self.data_x) 
+    
+    def get_lead_values(self, fpath, lead=2):
+        lead_vals = []
+        with open(fpath, "r") as f:
+            for line in f.readlines():
+                if len(line) <= 1:
+                    continue
+                lead_vals.append(float(line.split(',')[lead - 1]))
+        return lead_vals
+
+    def __read_data__(self):
+        df_raw = pd.read_excel(os.path.join(self.root_path,
+                                          self.data_path)).iloc[:10606,:]
+
+        filenames = df_raw["FileName"]
+        ecg_features = df_raw.iloc[:, 5:].values
+        
+        self.rhythm_to_id = {rhythm : i for (i, rhythm) in df_raw["Rhythm"].unique()}
+        rhythm = np.asarray([self.rhythm_to_id[rhythm] for rhythm in df_raw["Rhythm"]])
+        
+        total_length = len(self.rhythm)
+
+        if self.set_type == 0:
+            border1, border2 = 0, int(total_length * 0.75)
+        elif self.set_type == 1:
+            border1, border2 = int(total_length * 0.75), int(total_length * 0.90)
+        elif self.set_type == 2:
+            border1, border2 = int(total_length * 0.75), total_length
+
+        self.data_x = zip(ecg_features[border1:border2], filenames[border1:border2])
+        self.data_y = rhythm[border1:border2]
+
+    def __getitem__(self, index):
+        ecg_features, filename = self.data_x[index]
+        lead_values = self.get_lead_values(os.path.join(self.root_path, "ECGDataDenoised", filename))
+
+        return (lead_values, ecg_features), self.data_y[index]
+
+    def __len__(self):
+        return len(self.data_x)
+
 class Dataset_ETT_minute(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='S', data_path='ETTm1.csv',

@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -314,6 +315,48 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
         model.train()
     return total_loss
 
+def vali_ecg_tempo(model, vali_data, vali_loader, criterion, args, device, itr):
+    total_loss = []
+    total_accuracy = []
+
+    model.in_layer_ecg_features.eval()
+    model.in_layer_raw_data.eval()
+    model.out_layer_ecg_features.eval()
+    model.out_layer_raw_data.eval()
+    model.eval()
+        
+    with torch.no_grad():
+        for i, data in tqdm(enumerate(vali_loader)):
+            batch_x, batch_y = data[0], data[1]
+            
+            (lead_values, ecg_features) = batch_x
+            lead_values.float().to(device)
+            ecg_features.float().to(device)
+
+            batch_y = F.one_hot(batch_y.int(), num_classes=11)
+
+            outputs = model(lead_values, ecg_features, itr)
+            
+            pred = outputs.detach().cpu()
+            true = batch_y.detach().cpu()
+
+            loss = criterion(pred, true)
+            total_loss.append(loss)
+
+            accuracy = torch.sum(true.argmax(dim = 1) == F.softmax(pred, dim = 1).argmax(dim = 1)).detach().item()/len(batch_y)
+            total_accuracy.append(accuracy)
+
+    total_loss = np.average(total_loss)
+    total_accuracy = np.average(total_accuracy)
+
+    model.in_layer_ecg_features.train()
+    model.in_layer_raw_data.train()
+    model.out_layer_ecg_features.train()
+    model.out_layer_raw_data.train()    
+    model.train()
+    
+    return total_loss, total_accuracy
+
 def MASE(x, freq, pred, true):
     masep = np.mean(np.abs(x[:, freq:] - x[:, :-freq]))
     return np.mean(np.abs(pred - true) / (masep + 1e-8))
@@ -404,3 +447,51 @@ def test(model, test_data, test_loader, args, device, itr):
     # print('mae:{:.4f}, mse:{:.4f}, rmse:{:.4f}, smape:{:.4f}'.format(mae, mse, rmse, smape))
 
     return mse, mae
+
+def test_ecg_tempo(model, test_data, test_loader, args, device, itr):
+    preds = []
+    trues = []
+    # mases = []
+
+    # Initialize accumulators for errors
+    total_accuracy = 0
+    total_loss = 0
+    n_samples = 0
+
+    model.eval()
+
+    with torch.no_grad():
+        for i, data in tqdm(enumerate(test_loader), total=len(test_loader)):
+            batch_x, batch_y = data[0], data[1]
+            
+            (lead_values, ecg_features) = batch_x
+            lead_values.float().to(device)
+            ecg_features.float().to(device)
+
+            batch_y = batch_y.int()
+
+            outputs = model(lead_values, ecg_features, itr)
+            
+            pred = outputs.detach().cpu()
+            true = batch_y.detach().cpu()
+
+            torch.cuda.empty_cache()
+
+            batch_loss = F.cross_entropy(true, pred)
+            batch_accuracy = torch.sum(true == F.softmax(pred, dim = 1).argmax(dim = 1)).detach().item()/len(batch_y)
+            
+            # Update the total errors
+            total_loss += batch_loss * batch_x.size(0)  # Assuming batch_x.size(0) is the batch size
+            total_accuracy += batch_accuracy * batch_x.size(0)
+            n_samples += batch_x.size(0)
+
+            torch.cuda.empty_cache()
+            
+    # Calculate the average errors
+    loss = total_loss / n_samples
+    accuracy = total_accuracy / n_samples
+
+    print(f'Average Loss: {loss}')
+    print(f'Average Accuracy: {accuracy}')
+
+    return loss, accuracy

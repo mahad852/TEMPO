@@ -98,3 +98,15 @@ datasets:
     embed: timeF
     freq: 0
     percent: 100
+
+  ecg_chapman:
+    root_path: ./dataset/ECG_Chapman/
+    data_path: Diagnostics.xlsx
+    data_name: ecg_chapman
+    data: ecg_chapman
+    lradj: type4
+    features: All
+    target: Rhythm
+    embed: timeF
+    freq: 0
+    percent: 100

@@ -151,7 +151,7 @@ class Dataset_ECG_MIT(Dataset):
 
         
         # After we get data, we do the stl resolve
-        trend_stamp, seasonal_stamp, resid_stamp = self.stl_resolve(data_raw=data, data_name=self.data_name)
+        trend_stamp, seasonal_stamp, resid_stamp = self.stl_resolve(data_raw=df_raw, data_name=self.data_name)
         # end -dove
 
         if self.timeenc == 1:

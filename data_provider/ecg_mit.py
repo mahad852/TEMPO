@@ -118,7 +118,7 @@ class Dataset_ECG_MIT(Dataset):
         for file in os.listdir(self.root_path):
             if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
                 fname = file.split('.')[0]
-                record = wfdb.rdrecord(fname)
+                record = wfdb.rdrecord(os.path.join(self.root_path, fname))
                 data[:, i] = record.__dict__["p_signal"][:, 0]
                 data[:, i + 1] = record.__dict__["p_signal"][:, 1]
                 

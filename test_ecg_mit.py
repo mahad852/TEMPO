@@ -1,14 +1,18 @@
 from data_provider.data_factory import data_provider
-from utils.tools import EarlyStopping, adjust_learning_rate, visual, vali_ecg_tempo, test_ecg_tempo
+from utils.tools import EarlyStopping, adjust_learning_rate, visual, vali, test
 from torch.utils.data import Subset
 from tqdm import tqdm
-from models.ECG_TEMPO import ECG_TEMPO
+from models.PatchTST import PatchTST
+from models.GPT4TS import GPT4TS
+from models.DLinear import DLinear
+from models.TEMPO import TEMPO
+# from models.T5 import T54TS
+from models.ETSformer import ETSformer
 
 
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import optim
 from numpy.random import choice
 
@@ -71,7 +75,7 @@ parser.add_argument('--c_out', type=int, default=7)
 parser.add_argument('--patch_size', type=int, default=16)
 parser.add_argument('--kernel_size', type=int, default=25)
 
-parser.add_argument('--loss_func', type=str, default='cross_entropy')
+parser.add_argument('--loss_func', type=str, default='mse')
 parser.add_argument('--pretrain', type=int, default=1)
 parser.add_argument('--freeze', type=int, default=1)
 parser.add_argument('--model', type=str, default='GPT4TS_multi')
@@ -119,11 +123,11 @@ SEASONALITY_MAP = {
 
 
 
-losses = []
-accuracies = []
+mses = []
+maes = []
 for ii in range(args.itr):
 
-    setting = '{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_gl{}_df{}_eb{}_itr{}'.format(args.model_id, 336, args.label_len, args.pred_len,
+    setting = '{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_gl{}_df{}_eb{}_itr{}'.format(args.model_id, args.seq_len, args.label_len, args.pred_len,
                                                                     args.d_model, args.n_heads, args.e_layers, args.gpt_layers, 
                                                                     args.d_ff, args.embed, ii)
     path = os.path.join(args.checkpoints, setting)
@@ -159,7 +163,8 @@ for ii in range(args.itr):
        
         print("dataset: ", args.data)
         train_data, train_loader = data_provider(args, 'train')
-        min_sample_num = min(min_sample_num, len(train_data))
+        if dataset_singe not in ['ETTh1', 'ETTh2', 'ILI', 'exchange']:   
+            min_sample_num = min(min_sample_num, len(train_data))
         
         # args.percent = 20
         vali_data, vali_loader = data_provider(args, 'val')
@@ -188,7 +193,12 @@ for ii in range(args.itr):
 
         print("dataset: ", args.data)
         train_data, train_loader = data_provider(args, 'train')
-        train_data = Subset(train_data, choice(len(train_data), min_sample_num))
+        if dataset_singe not in ['ETTh1', 'ETTh2', 'ILI', 'exchange'] and args.equal == 1: 
+            train_data = Subset(train_data, choice(len(train_data), min_sample_num))
+        if args.electri_multiplier>1 and args.equal == 1 and dataset_singe in ['electricity']: 
+            train_data = Subset(train_data, choice(len(train_data), int(min_sample_num*args.electri_multiplier)))
+        if args.traffic_multiplier>1 and args.equal == 1 and dataset_singe in ['traffic']: 
+            train_data = Subset(train_data, choice(len(train_data), int(min_sample_num*args.traffic_multiplier)))
         train_datas.append(train_data)
 
     if len(train_datas) > 1:
@@ -223,12 +233,27 @@ for ii in range(args.itr):
     time_now = time.time()
     train_steps = len(train_loader) #190470 -52696
 
-    model = ECG_TEMPO(args, device)
-    model.to(device)
+    if args.model == 'PatchTST':
+        model = PatchTST(args, device)
+        model.to(device)
+    elif args.model == 'DLinear':
+        model = DLinear(args, device)
+        model.to(device)
+    elif args.model == 'TEMPO':
+        model = TEMPO(args, device)
+        model.to(device)
+    elif args.model == 'T5':
+        model = T54TS(args, device)
+        model.to(device)
+    elif 'ETSformer' in args.model:
+        model = ETSformer(args, device)
+        model.to(device)
+    else:
+        model = GPT4TS(args, device)
     # mse, mae = test(model, test_data, test_loader, args, device, ii)
 
     params = model.parameters()
-    model_optim = torch.optim.Adam(params, lr=args.learning_rate, weight_decay=1e-5)
+    model_optim = torch.optim.Adam(params, lr=args.learning_rate)
     
     early_stopping = EarlyStopping(patience=args.patience, verbose=True)
     if args.loss_func == 'mse':
@@ -240,77 +265,31 @@ for ii in range(args.itr):
             def forward(self, pred, true):
                 return torch.mean(200 * torch.abs(pred - true) / (torch.abs(pred) + torch.abs(true) + 1e-8))
         criterion = SMAPE()
-    elif args.loss_func == "cross_entropy":
-        criterion = nn.CrossEntropyLoss()
     
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-8)
 
-    for epoch in range(args.train_epochs):
-
-        iter_count = 0
-        train_loss = []
-        train_accuracy = []
-        epoch_time = time.time()
-        for i, ((lead_values, ecg_features), batch_y) in tqdm(enumerate(train_loader),total = len(train_loader)):
-
-            iter_count += 1
-            model_optim.zero_grad()
-            lead_values = lead_values.float().to(device)
-            ecg_features = ecg_features.float().to(device)
-
-            batch_y = F.one_hot(batch_y.int().to(device), num_classes=11).float()
-        
-            outputs = model(lead_values, ecg_features, ii)
-
-            loss = criterion(outputs, batch_y) 
-            
-            train_loss.append(loss.item())
-            
-            batch_loss = torch.sum(batch_y.detach().argmax(dim = 1) == F.softmax(outputs.detach(), dim = 1).argmax(dim = 1)).detach().item()/len(batch_y)
-            train_accuracy.append(batch_loss)
-
-            if (i + 1) % 1000 == 0:
-                print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-                speed = (time.time() - time_now) / iter_count
-                left_time = speed * ((args.train_epochs - epoch) * train_steps - i)
-                print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                iter_count = 0
-                time_now = time.time()
-            loss.backward()
-            model_optim.step()
-        
-        
-        print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
-
-        train_loss = np.average(train_loss)
-        train_accuracy = np.average(train_accuracy)
-
-        vali_loss, vali_accuracy = vali_ecg_tempo(model, vali_data, vali_loader, criterion, args, device, ii)
-       
-        print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Train Accuracy: {3:.7f} Vali Loss: {4:.7f} Vali Accuracy: {5:.7f}".format(
-            epoch + 1, train_steps, train_loss, train_accuracy, vali_loss, vali_accuracy))
-
-        if args.cos:
-            scheduler.step()
-            print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
-        else:
-            adjust_learning_rate(model_optim, epoch + 1, args)
-        early_stopping(vali_loss, model, path)
-        
-        if early_stopping.early_stop:
-            print("Early stopping")
-            break
-    
 
     best_model_path = path + '/' + 'checkpoint.pth'
+    print(best_model_path)
     model.load_state_dict(torch.load(best_model_path), strict=False)
     print("------------------------------------")
-    loss, accuracy = test_ecg_tempo(model, test_data, test_loader, args, device, ii)
+    mse, mae = test(model, test_data, test_loader, args, device, ii)
     torch.cuda.empty_cache()
-    print('test on the ' + str(args.target_data) + ' dataset: loss:' + str(loss) + ' accuracy:' + str(accuracy))
+    print('test on the ' + str(args.target_data) + ' dataset: mse:' + str(mse) + ' mae:' + str(mae))
+#     mse, mae = test(model, test_data, test_loader, args, device, ii)
+#     torch.cuda.empty_cache()
+#     mse_s, mae_s = test(model, test_data_s, test_loader_s, args, device, ii)
+#     torch.cuda.empty_cache()
+#     mse_t, mae_t = test(model, test_data_t, test_loader_t, args, device, ii)
+#     torch.cuda.empty_cache()
+#     mse_f, mae_f = test(model, test_data_f, test_loader_f, args, device, ii)
+#     torch.cuda.empty_cache()
+#     mse_5, mae_5 = test(model, test_data_5, test_loader_5, args, device, ii)
+#     torch.cuda.empty_cache()
+#     mse_6, mae_6 = test(model, test_data_6, test_loader_6, args, device, ii)
+#     torch.cuda.empty_cache()
     
-    losses.append(loss)
-    accuracies.append(accuracy)
-
-print("loss_mean = {:.4f}, loss_std = {:.4f}".format(np.mean(losses), np.std(losses)))
-print("accuracy_mean = {:.4f}, accuracy_std = {:.4f}".format(np.mean(accuracies), np.std(accuracies)))
+    mses.append(mse)
+    maes.append(mae)
+print("mse_mean = {:.4f}, mse_std = {:.4f}".format(np.mean(mses), np.std(mses)))
+print("mae_mean = {:.4f}, mae_std = {:.4f}".format(np.mean(maes), np.std(maes)))

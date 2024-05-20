@@ -324,16 +324,17 @@ def vali_ecg_tempo(model, vali_data, vali_loader, criterion, args, device, itr):
     model.out_layer_ecg_features.eval()
     model.out_layer_raw_data.eval()
     model.eval()
+    model.to(device)
         
     with torch.no_grad():
         for i, data in tqdm(enumerate(vali_loader)):
             batch_x, batch_y = data[0], data[1]
             
             (lead_values, ecg_features) = batch_x
-            lead_values.float().to(device)
-            ecg_features.float().to(device)
+            lead_values = lead_values.float().to(device)
+            ecg_features = ecg_features.float().to(device)
 
-            batch_y = F.one_hot(batch_y.int(), num_classes=11)
+            batch_y = F.one_hot(batch_y.long().to(device), num_classes=11).float()
 
             outputs = model(lead_values, ecg_features, itr)
             
@@ -468,7 +469,7 @@ def test_ecg_tempo(model, test_data, test_loader, args, device, itr):
             lead_values.float().to(device)
             ecg_features.float().to(device)
 
-            batch_y = batch_y.int()
+            batch_y = batch_y.long()
 
             outputs = model(lead_values, ecg_features, itr)
             
@@ -477,7 +478,7 @@ def test_ecg_tempo(model, test_data, test_loader, args, device, itr):
 
             torch.cuda.empty_cache()
 
-            batch_loss = F.cross_entropy(true, pred)
+            batch_loss = F.cross_entropy(F.one_hot(true, num_classes=11).float(), pred)
             batch_accuracy = torch.sum(true == F.softmax(pred, dim = 1).argmax(dim = 1)).detach().item()/len(batch_y)
             
             # Update the total errors

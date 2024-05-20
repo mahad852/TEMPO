@@ -15,10 +15,12 @@ criterion = nn.MSELoss()
 class ECG_TEMPO(nn.Module):
     
     def __init__(self, configs, device):
-        super(TEMPO, self).__init__()
+        super(ECG_TEMPO, self).__init__()
         self.is_gpt = configs.is_gpt
         self.pretrain = configs.pretrain
         
+        self.data_embd_dim = 200
+
         if configs.is_gpt:
             if configs.pretrain:
                 self.gpt2_ecg_features = GPT2Model.from_pretrained('gpt2', output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model  
@@ -42,6 +44,8 @@ class ECG_TEMPO(nn.Module):
             self.token_len_ecg_features = len(self.gpt2_ecg_features_token['input_ids'][0])
             self.token_len_raw_data = len(self.gpt2_raw_data_token['input_ids'][0])
 
+        self.raw_mapper = nn.Linear(5000, self.data_embd_dim)
+
         self.in_layer_ecg_features = nn.Linear(1, configs.d_model)
         self.in_layer_raw_data = nn.Linear(1, configs.d_model)
 
@@ -50,10 +54,10 @@ class ECG_TEMPO(nn.Module):
             self.use_token = configs.use_token
             if self.use_token == 1: # if use prompt token's representation as the forecasting's information
                     self.out_layer_ecg_features = nn.Linear(configs.d_model * (11 + self.token_len_ecg_features), configs.pred_len)
-                    self.out_layer_raw_data = nn.Linear(configs.d_model * (5000 + self.token_len_raw_data), configs.pred_len)
+                    self.out_layer_raw_data = nn.Linear(configs.d_model * (self.data_embd_dim + self.token_len_raw_data), configs.pred_len)
             else:
                 self.out_layer_ecg_features = nn.Linear(configs.d_model * 11, configs.pred_len)
-                self.out_layer_raw_data = nn.Linear(configs.d_model * 5000, configs.pred_len)
+                self.out_layer_raw_data = nn.Linear(configs.d_model * self.data_embd_dim, configs.pred_len)
 
             self.prompt_layer_ecg_features = nn.Linear(configs.d_model, configs.d_model)
             self.prompt_layer_raw_data = nn.Linear(configs.d_model, configs.d_model)
@@ -63,7 +67,7 @@ class ECG_TEMPO(nn.Module):
                 layer.train()
         else:
             self.out_layer_ecg_features = nn.Linear(configs.d_model * 11, configs.pred_len)
-            self.out_layer_raw_data = nn.Linear(configs.d_model * 5000, configs.pred_len)
+            self.out_layer_raw_data = nn.Linear(configs.d_model * self.data_embd_dim, configs.pred_len)
 
         
         if configs.freeze and configs.pretrain:
@@ -88,7 +92,7 @@ class ECG_TEMPO(nn.Module):
 
 
         for layer in (self.gpt2_ecg_features, self.in_layer_ecg_features, self.out_layer_ecg_features, \
-                      self.in_layer_raw_data, self.out_layer_raw_data, self.in_layer_noise, self.out_layer_noise):
+                      self.in_layer_raw_data, self.out_layer_raw_data):
             layer.to(device=device)
             layer.train()
 
@@ -96,7 +100,7 @@ class ECG_TEMPO(nn.Module):
         #     layer.to(device=device)
         #     layer.train()
         
-        self.classifier = nn.Linear(configs.pred_len, 10)
+        self.classifier = nn.Linear(configs.pred_len, 11)
         
         self.cnt = 0
 
@@ -127,14 +131,13 @@ class ECG_TEMPO(nn.Module):
 
 
     def forward(self, x: torch.Tensor, ecg_features: torch.Tensor, itr, test=False):
-        B, L, M = x.shape # 4, 512, 1
-
-       
         x = self.rev_in_ecg_features(x, 'norm')
 
         original_x = x
 
         ecg_features = ecg_features.unsqueeze(2)
+
+        x = self.raw_mapper(x)
         x = x.unsqueeze(2)
 
         ecg_features = self.in_layer_ecg_features(ecg_features) # 4, 64, 768
@@ -166,6 +169,6 @@ class ECG_TEMPO(nn.Module):
         x = self.out_layer_raw_data(x.reshape(((x.shape[0], -1))))        
 
         outputs = ecg_features + x
-        outputs = self.rev_in_trend(outputs, 'denorm')
+        outputs = self.rev_in_ecg_features(outputs, 'denorm')
 
         return self.classifier(outputs)

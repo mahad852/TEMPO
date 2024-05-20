@@ -225,14 +225,20 @@ class Dataset_ECG_chapman(Dataset):
     def __read_data__(self):
         df_raw = pd.read_excel(os.path.join(self.root_path,
                                           self.data_path)).iloc[:10606,:]
+        df_raw = df_raw[df_raw["FileName"] != "MUSE_20180113_124215_52000"]
+        # df_raw = df_raw.sample(frac = 1)
+        df_raw = df_raw[df_raw["Rhythm"].isin(["AF", "AFIB", "SI", "SB", "SR", "ST", "SVT"])]
 
         filenames = df_raw["FileName"]
         ecg_features = df_raw.iloc[:, 5:].values
         
-        self.rhythm_to_id = {rhythm : i for (i, rhythm) in df_raw["Rhythm"].unique()}
+        self.rhythm_to_id = {rhythm : i for (i, rhythm) in enumerate(df_raw["Rhythm"].unique())}
         rhythm = np.asarray([self.rhythm_to_id[rhythm] for rhythm in df_raw["Rhythm"]])
-        
-        total_length = len(self.rhythm)
+
+        class_counts = df_raw["Rhythm"].value_counts()
+        class_weights = 1/class_counts
+
+        total_length = df_raw.shape[0]
 
         if self.set_type == 0:
             border1, border2 = 0, int(total_length * 0.75)
@@ -241,14 +247,15 @@ class Dataset_ECG_chapman(Dataset):
         elif self.set_type == 2:
             border1, border2 = int(total_length * 0.75), total_length
 
-        self.data_x = zip(ecg_features[border1:border2], filenames[border1:border2])
+        self.data_x = list(zip(ecg_features[border1:border2], filenames[border1:border2]))
         self.data_y = rhythm[border1:border2]
+        self.sample_weights = class_weights[df_raw["Rhythm"]].values[border1:border2]
 
     def __getitem__(self, index):
         ecg_features, filename = self.data_x[index]
-        lead_values = self.get_lead_values(os.path.join(self.root_path, "ECGDataDenoised", filename))
+        lead_values = self.get_lead_values(os.path.join(self.root_path, "ECGDataDenoised", f"{filename}.csv"))
 
-        return (lead_values, ecg_features), self.data_y[index]
+        return (np.asarray(lead_values), ecg_features), self.data_y[index]
 
     def __len__(self):
         return len(self.data_x)

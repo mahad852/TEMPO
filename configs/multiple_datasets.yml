@@ -110,3 +110,15 @@ datasets:
     embed: timeF
     freq: 0
     percent: 100
+
+  ecg_mit:
+    root_path: ../datasets/mit-bih-arrhythmia-database-1.0.0/
+    data_path: ETTh1.csv
+    data_name: ecg_mit
+    data: ecg_mit
+    lradj: type4
+    features: M
+    target: OT
+    embed: timeF
+    freq: ms
+    percent: 100

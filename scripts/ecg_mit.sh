@@ -12,7 +12,7 @@
 #SBATCH --error=outputs/ecg_mit.err
 #SBATCH --constraint=gpu80
 
-seq_len=2000
+seq_len=500
 model=TEMPO #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
@@ -53,7 +53,7 @@ python main_multi_6domain_release.py \
     --label_len 168 \
     --pred_len $pred_len \
     --prompt $prompt\
-    --batch_size 256 \
+    --batch_size 64 \
     --learning_rate $lr \
     --train_epochs 10 \
     --decay_fac 0.5 \

@@ -154,9 +154,9 @@ class Dataset_ECG_MIT(Dataset):
         trend_stamp, seasonal_stamp, resid_stamp = self.stl_resolve(data_raw=df_raw, data_name=self.data_name)
         # end -dove
 
-        if self.timeenc == 1:
-            data_stamp = time_features(data_stamp, freq=self.freq)
-            data_stamp = data_stamp.transpose(1, 0)
+        # if self.timeenc == 1:
+        #     data_stamp = time_features(data_stamp, freq=self.freq)
+        #     data_stamp = data_stamp.transpose(1, 0)
 
         self.data_x = data
         self.data_y = data

@@ -148,7 +148,7 @@ class Dataset_ECG_MIT(Dataset):
         curr_time = time.time() * 1000
         time_step = (1/360) * 1000
         # data_stamp = pd.to_datetime([curr_time + (i * time_step) for i in range(1, 650001)], unit='ms').values
-        data_stamp = [curr_time + (i * time_step) for i in range(1, 650001)]
+        data_stamp = torch.tensor([curr_time + (i * time_step) for i in range(1, 650001)])
         
         # After we get data, we do the stl resolve
         trend_stamp, seasonal_stamp, resid_stamp = self.stl_resolve(data_raw=df_raw, data_name=self.data_name)

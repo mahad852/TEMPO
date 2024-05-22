@@ -128,15 +128,15 @@ class Dataset_ECG_MIT(Dataset):
         
         df_raw = pd.DataFrame(data, columns=cols)
 
-        # border1s = [0, 12 * 30 * 24 - self.seq_len, 12 * 30 * 24 + 4 * 30 * 24 - self.seq_len]
-        # border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
-        # border1 = border1s[self.set_type]
-        # border2 = border2s[self.set_type]
-
-        # if self.set_type == 0:
-        #     border2 = (border2 - self.seq_len) * self.percent // 100 + self.seq_len
-
-        df_data = df_raw
+        num_columns = df_raw.shape[1]
+        if self.set_type == 0:
+            border1, border2 = 0, int(num_columns * 0.75)
+        elif self.set_type == 1:
+            border1, border2 = int(num_columns * 0.75), int(num_columns * 0.90)
+        elif self.set_type == 2:
+            border1, border2 = int(num_columns * 0.75), num_columns
+        
+        df_data = df_raw.iloc[:, border1:border2]
 
         if self.scale:
             train_data = df_data

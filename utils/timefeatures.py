@@ -28,7 +28,18 @@ class MilliOfSecond(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return (index.microsecond * 1000) / 999 - 0.5
+    
+class MicroOfMilli(TimeFeature):
+    """Microsecond of millisecond encoded as value between [-0.5, 0.5]"""
 
+    def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
+        return (index.microsecond) / 999 - 0.5
+
+class NanoOfMicro(TimeFeature):
+    """Nanosecond of microsecond encoded as value between [-0.5, 0.5]"""
+
+    def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
+        return (index.nanosecond) / 999 - 0.5
 
 class MinuteOfHour(TimeFeature):
     """Minute of hour encoded as value between [-0.5, 0.5]"""
@@ -112,6 +123,27 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
             DayOfYear,
         ],
         offsets.Milli : [
+            MilliOfSecond,
+            SecondOfMinute,
+            MinuteOfHour,
+            HourOfDay,
+            DayOfWeek,
+            DayOfMonth,
+            DayOfYear,
+        ],
+        offsets.Micro : [
+            MicroOfMilli,
+            MilliOfSecond,
+            SecondOfMinute,
+            MinuteOfHour,
+            HourOfDay,
+            DayOfWeek,
+            DayOfMonth,
+            DayOfYear,
+        ],
+        offsets.Nano : [
+            NanoOfMicro,
+            MicroOfMilli,
             MilliOfSecond,
             SecondOfMinute,
             MinuteOfHour,

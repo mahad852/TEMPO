@@ -98,7 +98,7 @@ parser.add_argument('--target_data', type=str, default='ETTm1')
 parser.add_argument('--use_token', type=int, default=0)
 parser.add_argument('--electri_multiplier', type=int, default=1)
 parser.add_argument('--traffic_multiplier', type=int, default=1)
-parser.add_argument('--embed', type=str, default='timeF')
+parser.add_argument('--embed', type=str, default='')
 
 #args = parser.parse_args([])
 args = parser.parse_args()

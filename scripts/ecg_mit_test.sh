@@ -12,7 +12,7 @@
 #SBATCH --error=outputs/ecg_mit.err
 #SBATCH --constraint=gpu80
 
-seq_len=2000
+seq_len=250
 model=TEMPO #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
@@ -20,7 +20,7 @@ traffic_multiplier=1
 
 for percent in 100 #5 10
 do
-for pred_len in 720 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
+for pred_len in 64 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
 do
 for tmax in 20
 do
@@ -46,7 +46,7 @@ python test_ecg_mit.py \
     --stl_weight 0.001 \
     --equal $equal \
     --checkpoint ./lora_revin_6domain_checkpoints'_'$prompt/ \
-    --model_id ETTh2_TEMPO'_'$gpt_layer'_'prompt_learn'_'$seq_len'_'$pred_len'_'$percent \
+    --model_id ECG_MIT_TEMPO'_'$gpt_layer'_'prompt_learn'_'$seq_len'_'$pred_len'_'$percent \
     --electri_multiplier $electri_multiplier \
     --traffic_multiplier $traffic_multiplier \
     --seq_len $seq_len \

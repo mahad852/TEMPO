@@ -14,5 +14,6 @@ class CustomLinear(nn.Module):
         self.output_layer = nn.Linear(self.embed_dim, self.pred_len)
 
     def forward(self, batch_x):
+        print(batch_x.shape)
         x = self.relu1(self.input_layer(batch_x))
         return self.output_layer(x)

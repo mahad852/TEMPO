@@ -251,6 +251,7 @@ for ii in range(args.itr):
         model.to(device)
     elif 'CustomLinear' in args.model:
         model = CustomLinear(args.seq_len, args.pred_len)
+        model.to(device)
     else:
         model = GPT4TS(args, device)
     # mse, mae = test(model, test_data, test_loader, args, device, ii)

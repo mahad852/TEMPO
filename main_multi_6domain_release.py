@@ -296,6 +296,7 @@ for ii in range(args.itr):
                 outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             else:
                 outputs = model(batch_x, ii)
+            print("outputs and batch_y:", outputs, batch_y, outputs.shape, batch_y.shape)
             outputs = outputs[:, -args.pred_len:, :]
             batch_y = batch_y[:, -args.pred_len:, :].to(device)
             loss = criterion(outputs, batch_y) 

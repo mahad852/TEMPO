@@ -8,6 +8,7 @@ from models.DLinear import DLinear
 from models.TEMPO import TEMPO
 from models.T5 import T54TS
 from models.ETSformer import ETSformer
+from models.CustomLinear import CustomLinear
 
 
 import numpy as np
@@ -248,6 +249,8 @@ for ii in range(args.itr):
     elif 'ETSformer' in args.model:
         model = ETSformer(args, device)
         model.to(device)
+    elif 'CustomLinear' in args.model:
+        model = CustomLinear(args.seq_len, args.pred_len)
     else:
         model = GPT4TS(args, device)
     # mse, mae = test(model, test_data, test_loader, args, device, ii)
@@ -294,9 +297,11 @@ for ii in range(args.itr):
                 dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
                 dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(device)
                 outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            elif 'CustomLinear' in args.model:
+                outputs = model(batch_x)
             else:
                 outputs = model(batch_x, ii)
-            print("outputs and batch_y:", outputs, batch_y, outputs.shape, batch_y.shape)
+
             outputs = outputs[:, -args.pred_len:, :]
             batch_y = batch_y[:, -args.pred_len:, :].to(device)
             loss = criterion(outputs, batch_y) 

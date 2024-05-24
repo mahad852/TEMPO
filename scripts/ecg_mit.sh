@@ -12,7 +12,7 @@
 #SBATCH --error=outputs/ecg_mit.err
 #SBATCH --constraint=gpu80
 
-seq_len=250
+seq_len=5400
 model=CustomLinear #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1

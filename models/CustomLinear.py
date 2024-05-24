@@ -3,6 +3,7 @@ import torch.nn as nn
 
 class CustomLinear(nn.Module):
     def __init__(self, seq_len, pred_len):
+        super(CustomLinear, self).__init__()
         self.seq_len = seq_len
         self.pred_len = pred_len
 

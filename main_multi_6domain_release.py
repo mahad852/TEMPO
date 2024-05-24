@@ -278,7 +278,7 @@ for ii in range(args.itr):
         train_loss = []
         epoch_time = time.time()
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, seq_trend, seq_seasonal, seq_resid) in tqdm(enumerate(train_loader),total = len(train_loader)):
-
+            print("batch_shape:", batch_x.shape)
             iter_count += 1
             model_optim.zero_grad()
             batch_x = batch_x.float().to(device)

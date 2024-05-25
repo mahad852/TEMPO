@@ -13,10 +13,35 @@ import pickle
 import wfdb
 from statsmodels.tsa.seasonal import STL
 import time
+from scipy import signal
+from scipy.signal import medfilt
 
 warnings.filterwarnings('ignore')
 
 stl_position = 'stl/'
+
+def moving_average(a, n=3):
+    a = np.pad(a, (1, 1), 'edge')
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+def notch_filter(a):
+    samp_freq = 360.0  # Sample frequency (Hz)
+    notch_freq = 60.0  # Frequency to be removed from signal (Hz)
+    quality_factor = 2  # Quality factor
+
+    b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, samp_freq)
+    return signal.filtfilt(b_notch, a_notch, a)
+
+def normalize(a):
+    return (a - np.min(a))/(np.max(a) - np.min(a))
+
+def preprocess(a):
+    a = moving_average(a)
+    a = medfilt(a, kernel_size=3)
+    a = notch_filter(a)
+    return normalize(a)    
 
 class Dataset_ECG_MIT(Dataset):
     def __init__(self, root_path, data_path = '', flag='train', size=None,
@@ -119,7 +144,7 @@ class Dataset_ECG_MIT(Dataset):
             if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
                 fname = file.split('.')[0]
                 record = wfdb.rdrecord(os.path.join(self.root_path, fname))
-                data[:, i] = record.__dict__["p_signal"][:, 0]
+                data[:, i] = preprocess(record.__dict__["p_signal"][:, 0])
                 # data[:, i + 1] = record.__dict__["p_signal"][:, 1]
                 
                 cols.extend(list(map(lambda s : f"{fname}_{s}", record.__dict__["sig_name"][:1])))

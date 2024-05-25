@@ -310,6 +310,9 @@ for ii in range(args.itr):
                     loss += args.stl_weight*loss_local
             train_loss.append(loss.item())
 
+            if loss.item() > 1.0:
+                print("iter:", i + 1, "loss:", loss.item(), "batch:", batch_y, "outputs:", outputs)
+
             if (i + 1) % 1000 == 0:
                 print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                 speed = (time.time() - time_now) / iter_count

@@ -137,22 +137,22 @@ class Dataset_ECG_MIT(Dataset):
         cols = []
         data = np.zeros(shape = (650000, total))
 
-        i = 0
 
-        # with np.load(os.path.join(self.root_path, "MIT-BIH.npz")) as d:
-        #     cols = d.files
-        #     for i, file in enumerate(d.files):
-        #         data[:, i] = d[file]
+        with np.load(os.path.join(self.root_path, "MIT-BIH.npz")) as d:
+            cols = d.files
+            for i, file in enumerate(d.files):
+                data[:, i] = d[file]
 
-        for file in os.listdir(self.root_path):
-            if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
-                fname = file.split('.')[0]
-                record = wfdb.rdrecord(os.path.join(self.root_path, fname))
-                data[:, i] = preprocess(record.__dict__["p_signal"][:, 0])
-                # data[:, i + 1] = record.__dict__["p_signal"][:, 1]
+        # i = 0
+        # for file in os.listdir(self.root_path):
+        #     if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
+        #         fname = file.split('.')[0]
+        #         record = wfdb.rdrecord(os.path.join(self.root_path, fname))
+        #         data[:, i] = preprocess(record.__dict__["p_signal"][:, 0])
+        #         # data[:, i + 1] = record.__dict__["p_signal"][:, 1]
                 
-                cols.extend(list(map(lambda s : f"{fname}_{s}", record.__dict__["sig_name"][:1])))
-                i += 1
+        #         cols.extend(list(map(lambda s : f"{fname}_{s}", record.__dict__["sig_name"][:1])))
+        #         i += 1
         
         df_raw = pd.DataFrame(data, columns=cols)
 

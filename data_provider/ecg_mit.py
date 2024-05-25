@@ -111,7 +111,7 @@ class Dataset_ECG_MIT(Dataset):
                 total += 1
 
         cols = []
-        data = np.zeros(shape = (650000, total * 2))
+        data = np.zeros(shape = (650000, total))
 
         i = 0
 

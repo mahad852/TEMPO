@@ -120,11 +120,11 @@ class Dataset_ECG_MIT(Dataset):
                 fname = file.split('.')[0]
                 record = wfdb.rdrecord(os.path.join(self.root_path, fname))
                 data[:, i] = record.__dict__["p_signal"][:, 0]
-                data[:, i + 1] = record.__dict__["p_signal"][:, 1]
+                # data[:, i + 1] = record.__dict__["p_signal"][:, 1]
                 
-                cols.extend(list(map(lambda s : f"{fname}_{s}", record.__dict__["sig_name"])))
+                cols.extend(list(map(lambda s : f"{fname}_{s}", record.__dict__["sig_name"][:1])))
 
-                i += 2
+                # i += 2
         
         df_raw = pd.DataFrame(data, columns=cols)
 

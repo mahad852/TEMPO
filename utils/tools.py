@@ -285,6 +285,8 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
                 dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
                 dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(device)
                 outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            elif 'CustomLinear' == args.model:
+                outputs = model(batch_x)
             else:
                 outputs = model(batch_x, itr)
             

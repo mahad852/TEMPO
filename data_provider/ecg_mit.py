@@ -30,7 +30,6 @@ def notch_filter(a):
     samp_freq = 360.0  # Sample frequency (Hz)
     notch_freq = 60.0  # Frequency to be removed from signal (Hz)
     quality_factor = 2  # Quality factor
-
     b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, samp_freq)
     return signal.filtfilt(b_notch, a_notch, a)
 
@@ -45,7 +44,7 @@ def preprocess(a):
 
 class Dataset_ECG_MIT(Dataset):
     def __init__(self, root_path, data_path = '', flag='train', size=None,
-                 features='S', target='OT', scale=True, timeenc=0, freq='ms', 
+                 features='S', target='OT', scale=False, timeenc=0, freq='ms', 
                  percent=100, data_name = 'ecg_mit', max_len=-1, train_all=False):
         # info
         if size == None:
@@ -163,12 +162,12 @@ class Dataset_ECG_MIT(Dataset):
         
         df_data = df_raw.iloc[:, border1:border2]
 
-        if self.scale:
-            train_data = df_data
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
-        else:
-            data = df_data.values
+        # if self.scale:
+        #     train_data = df_data
+        #     self.scaler.fit(train_data.values)
+        #     data = self.scaler.transform(df_data.values)
+        # else:
+        data = df_data.values
 
         curr_time = time.time() * 1000
         time_step = (1/360) * 1000

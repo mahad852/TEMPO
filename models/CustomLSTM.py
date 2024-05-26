@@ -17,6 +17,8 @@ class CustomLSTM(nn.Module):
         self.output_layer = nn.Linear(self.embed_dim2, self.pred_len)
         
     def forward(self, batch_x):
-        x = nn.functional.tanh(self.lstm1(batch_x.squeeze(-1)))
-        x = nn.functional.tanh(self.lstm2(x))
+        x, _ = self.lstm1(batch_x.squeeze(-1))
+        x = nn.functional.tanh(x)
+        x, _ = self.lstm2(x)
+        x = nn.functional.tanh(x)
         return self.output_layer(x).unsqueeze(-1)

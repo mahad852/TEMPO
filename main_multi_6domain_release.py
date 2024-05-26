@@ -258,7 +258,7 @@ for ii in range(args.itr):
     elif 'ETSformer' in args.model:
         model = ETSformer(args, device)
         model.to(device)
-    elif 'CustomLinear' in args.model:
+    elif 'CustomLinear' in args.model or 'CustomLSTM' in args.model:
         model = CustomLinear(args.seq_len, args.pred_len)
         model.to(device)
     elif 'CustomLSTM' in args.model:

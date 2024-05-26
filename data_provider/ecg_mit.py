@@ -158,13 +158,15 @@ class Dataset_ECG_MIT(Dataset):
         
         df_raw = pd.DataFrame(data, columns=cols)
 
+        train_percentage = 0.70
+
         num_columns = df_raw.shape[1]
         if self.set_type == 0:
-            border1, border2 = 0, int(num_columns * 0.70)
+            border1, border2 = 0, int(num_columns * train_percentage)
         elif self.set_type == 1:
-            border1, border2 = int(num_columns * 0.70), num_columns
+            border1, border2 = int(num_columns * train_percentage), num_columns
         elif self.set_type == 2:
-            border1, border2 = int(num_columns * 0.70), num_columns
+            border1, border2 = int(num_columns * train_percentage), num_columns
         
         df_data = df_raw.iloc[:, border1:border2]
 

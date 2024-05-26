@@ -13,7 +13,7 @@
 #SBATCH --constraint=gpu80
 
 seq_len=64
-model=CustomLinear #TEMPO #PatchTST #_multi
+model=CustomLSTM #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
 

@@ -251,6 +251,8 @@ def convert_tsf_to_dataframe(
 
 def vali(model, vali_data, vali_loader, criterion, args, device, itr):
     total_loss = []
+    total_loss_mae = []
+
     if args.model == 'PatchTST' or args.model == 'DLinear' or args.model == 'TCN' or args.model == 'NLinear' or args.model == 'NLinear_multi':
         model.eval()
     elif args.model == 'TEMPO' or args.model == 'TEMPO_t5' or 'multi' in args.model:
@@ -285,7 +287,7 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
                 dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
                 dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(device)
                 outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            elif 'CustomLinear' == args.model:
+            elif 'CustomLinear' == args.model or 'CustomLSTM' == args.model:
                 outputs = model(batch_x)
             else:
                 outputs = model(batch_x, itr)
@@ -300,7 +302,12 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
             loss = criterion(pred, true)
 
             total_loss.append(loss)
+            total_loss_mae.append(nn.functional.l1_loss(pred, true))
+
     total_loss = np.average(total_loss)
+    total_loss_mae = np.average(total_loss)
+    total_loss_rmse = np.average(np.sqrt(total_loss))
+
     if args.model == 'PatchTST' or args.model == 'DLinear' or args.model == 'TCN' or  args.model == 'NLinear' or  args.model == 'NLinear_multi':
         model.train()
     elif args.model == 'TEMPO' or args.model == 'TEMPO_t5' or 'multi' in args.model:
@@ -315,7 +322,7 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
         model.out_layer.train()
     else:
         model.train()
-    return total_loss
+    return total_loss, total_loss_mae, total_loss_rmse
 
 def vali_ecg_tempo(model, vali_data, vali_loader, criterion, args, device, itr):
     total_loss = []

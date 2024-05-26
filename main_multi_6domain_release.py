@@ -9,6 +9,7 @@ from models.TEMPO import TEMPO
 from models.T5 import T54TS
 from models.ETSformer import ETSformer
 from models.CustomLinear import CustomLinear
+from models.CustomLSTM import CustomLSTM
 
 
 import numpy as np
@@ -122,7 +123,17 @@ SEASONALITY_MAP = {
 }
 
 
+is_ecg_data = 'ecg_mit' in args.datasets.split(',')
 
+if is_ecg_data and not os.path.exists(os.path.join("logs", "ecg_mit")):
+    os.makedirs(os.path.join("logs", "ecg_mit"))
+
+model_log_fname = f"{args.model}_{args.seq_len}_{args.pred_len}.txt"
+model_log_fpath = os.path.join("logs", "ecg_mit", model_log_fname)
+
+if os.path.exists(model_log_fpath):
+    os.remove(model_log_fpath)
+    
 
 mses = []
 maes = []
@@ -137,11 +148,9 @@ for ii in range(args.itr):
 
     # if args.freq == 0:
     #     args.freq = 'h'
-
+    
     device = torch.device('cuda:0')
 
-
-    
     train_data_name = args.datasets.split(',')
     print(train_data_name)
     train_datas = []
@@ -202,7 +211,7 @@ for ii in range(args.itr):
             train_data = Subset(train_data, choice(len(train_data), int(min_sample_num*args.traffic_multiplier)))
         train_datas.append(train_data)
 
-    if len(train_datas) > 1:
+    if len(train_datas) > 1 or dataset_singe == 'ecg_mit':
         train_data = torch.utils.data.ConcatDataset([train_datas[0], train_datas[1]])
         vali_data = torch.utils.data.ConcatDataset([val_datas[0], val_datas[1]])
         for i in range(2,len(train_datas)):
@@ -252,6 +261,8 @@ for ii in range(args.itr):
     elif 'CustomLinear' in args.model:
         model = CustomLinear(args.seq_len, args.pred_len)
         model.to(device)
+    elif 'CustomLSTM' in args.model:
+        model = CustomLSTM(args.seq_len, args.pred_len)
     else:
         model = GPT4TS(args, device)
     # mse, mae = test(model, test_data, test_loader, args, device, ii)
@@ -276,6 +287,8 @@ for ii in range(args.itr):
 
         iter_count = 0
         train_loss = []
+        train_loss_mae = []
+
         epoch_time = time.time()
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, seq_trend, seq_seasonal, seq_resid) in tqdm(enumerate(train_loader),total = len(train_loader)):
             iter_count += 1
@@ -308,13 +321,15 @@ for ii in range(args.itr):
             if args.model == 'GPT4TS_multi' or args.model == 'TEMPO_t5':
                 if not args.no_stl_loss:
                     loss += args.stl_weight*loss_local
+            
+            train_loss_mae.append(nn.functional.l1_loss(outputs, batch_y).item())
             train_loss.append(loss.item())
 
             # if loss.item() > 1.0:
             #     print("iter:", i + 1, "loss:", loss.item(), "batch:", batch_y, "outputs:", outputs)
 
             if (i + 1) % 1000 == 0:
-                print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
+                print("\titers: {0}, epoch: {1} | MSE loss: {2:.7f} | MAE loss: {3:.7f} RMSE loss: {4:.7f}".format(i + 1, epoch + 1, loss.item(), train_loss_mae[-1], torch.sqrt(loss).item()))
                 speed = (time.time() - time_now) / iter_count
                 left_time = speed * ((args.train_epochs - epoch) * train_steps - i)
                 print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
@@ -327,11 +342,19 @@ for ii in range(args.itr):
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
         train_loss = np.average(train_loss)
-        vali_loss = vali(model, vali_data, vali_loader, criterion, args, device, ii)
-       
-        print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
-            epoch + 1, train_steps, train_loss, vali_loss))
+        train_loss_rmse = np.average(np.sqrt(train_loss))
+        train_loss_mae = np.average(train_loss_mae)
 
+        vali_loss, vali_loss_mae, vali_loss_rmse = vali(model, vali_data, vali_loader, criterion, args, device, ii)
+       
+        print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: MSE: {3:.7f} RMSE: {4:.7f} MAE: {5:.7f}".format(
+            epoch + 1, train_steps, train_loss, vali_loss, vali_loss_rmse, vali_loss_mae))
+        
+        if is_ecg_data:
+            with open(model_log_fpath, "a") as f:
+                f.write(f"Epoch: {epoch + 1}; TrainMSE: {train_loss}; TrainRMSE: {train_loss_rmse}; TrainMAE: {train_loss_mae}; ValiMSE: {vali_loss}; ValRMSE: {vali_loss_rmse}; ValMAE: {vali_loss_mae}")
+                f.write("\n")
+            
         if args.cos:
             scheduler.step()
             print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))

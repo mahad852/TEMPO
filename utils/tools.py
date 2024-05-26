@@ -305,7 +305,7 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
             total_loss_mae.append(nn.functional.l1_loss(pred, true))
 
     total_loss = np.average(total_loss)
-    total_loss_mae = np.average(total_loss)
+    total_loss_mae = np.average(total_loss_mae)
     total_loss_rmse = np.average(np.sqrt(total_loss))
 
     if args.model == 'PatchTST' or args.model == 'DLinear' or args.model == 'TCN' or  args.model == 'NLinear' or  args.model == 'NLinear_multi':

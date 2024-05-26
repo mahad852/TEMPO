@@ -129,19 +129,21 @@ class Dataset_ECG_MIT(Dataset):
     def __read_data__(self):
         self.scaler = StandardScaler()
         
-        total = 0
-        for file in os.listdir(self.root_path):
-            if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
-                total += 1
-
         cols = []
-        data = np.zeros(shape = (650000, total))
-
-
+        data = None
         with np.load(os.path.join(self.root_path, "MIT-BIH.npz")) as d:
+            data = np.zeros(shape = (650000, len(d.files)))
             cols = d.files
             for i, file in enumerate(d.files):
                 data[:, i] = d[file]
+
+        # total = 0
+        # for file in os.listdir(self.root_path):
+        #     if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
+        #         total += 1
+
+        # cols = []
+        # data = np.zeros(shape = (650000, total))
 
         # i = 0
         # for file in os.listdir(self.root_path):

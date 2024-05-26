@@ -211,7 +211,7 @@ for ii in range(args.itr):
             train_data = Subset(train_data, choice(len(train_data), int(min_sample_num*args.traffic_multiplier)))
         train_datas.append(train_data)
 
-    if len(train_datas) > 1 or dataset_singe == 'ecg_mit':
+    if len(train_datas) > 1:
         train_data = torch.utils.data.ConcatDataset([train_datas[0], train_datas[1]])
         vali_data = torch.utils.data.ConcatDataset([val_datas[0], val_datas[1]])
         for i in range(2,len(train_datas)):

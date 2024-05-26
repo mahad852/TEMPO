@@ -160,19 +160,14 @@ class Dataset_ECG_MIT(Dataset):
 
         num_columns = df_raw.shape[1]
         if self.set_type == 0:
-            border1, border2 = 0, int(num_columns * 0.75)
+            border1, border2 = 0, int(num_columns * 0.70)
         elif self.set_type == 1:
-            border1, border2 = int(num_columns * 0.75), int(num_columns * 0.90)
+            border1, border2 = int(num_columns * 0.70), num_columns
         elif self.set_type == 2:
-            border1, border2 = int(num_columns * 0.75), num_columns
+            border1, border2 = int(num_columns * 0.70), num_columns
         
         df_data = df_raw.iloc[:, border1:border2]
 
-        # if self.scale:
-        #     train_data = df_data
-        #     self.scaler.fit(train_data.values)
-        #     data = self.scaler.transform(df_data.values)
-        # else:
         data = df_data.values
 
         curr_time = time.time() * 1000

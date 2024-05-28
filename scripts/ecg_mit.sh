@@ -55,7 +55,7 @@ python main_multi_6domain_release.py \
     --prompt $prompt\
     --batch_size 64 \
     --learning_rate $lr \
-    --train_epochs 10 \
+    --train_epochs 1 \
     --decay_fac 0.5 \
     --d_model 768 \
     --n_heads 4 \

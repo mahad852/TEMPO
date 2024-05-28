@@ -158,7 +158,7 @@ class Dataset_ECG_MIT(Dataset):
         
         df_raw = pd.DataFrame(data, columns=cols)
 
-        train_percentage = 0.10
+        train_percentage = 0.30
 
         num_columns = df_raw.shape[1]
         num_rows = df_raw.shape[0]

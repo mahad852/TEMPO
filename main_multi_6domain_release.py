@@ -373,7 +373,7 @@ for ii in range(args.itr):
             break
     
     
-    if is_ecg_data:
+    if not is_ecg_data:
         best_model_path = path + '/' + 'checkpoint.pth'
         model.load_state_dict(torch.load(best_model_path), strict=False)
         print("------------------------------------")

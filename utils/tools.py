@@ -307,17 +307,14 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
             # encoder - decoder
             outputs = outputs[:, -args.pred_len:, :]
             batch_y = batch_y[:, -args.pred_len:, :].to(device)
-
-            pred = outputs.detach().cpu()
-            true = batch_y.detach().cpu()
-
-            loss = criterion(pred, true)
+            
+            loss = criterion(outputs, batch_y)
 
             total_loss.append(loss)
-            total_loss_mae.append(nn.functional.l1_loss(pred, true))
+            total_loss_mae.append(nn.functional.l1_loss(outputs, batch_y))
 
             for pred_len in range(1, args.pred_len + 1):
-                gt, out =  true[:, :pred_len, :], pred[:, :pred_len, :]
+                gt, out =  batch_y[:, :pred_len, :], outputs[:, :pred_len, :]
                 loss_mse_by_horizon[pred_len].append(nn.functional.mse_loss(gt, out))
                 loss_mae_by_horizon[pred_len].append(nn.functional.l1_loss(gt, out))
                 loss_smape_by_horizon[pred_len].append(criterion_smape(gt, out))

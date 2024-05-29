@@ -35,6 +35,12 @@ def get_init_config(config_path=None):
     config = OmegaConf.load(config_path)
     return config
 
+class SMAPE(nn.Module):
+    def __init__(self):
+        super(SMAPE, self).__init__()
+    def forward(self, pred, true):
+        return torch.mean(200 * torch.abs(pred - true) / (torch.abs(pred) + torch.abs(true) + 1e-8))
+
 warnings.filterwarnings('ignore')
 
 fix_seed = 2021
@@ -275,11 +281,6 @@ for ii in range(args.itr):
     if args.loss_func == 'mse':
         criterion = nn.MSELoss()
     elif args.loss_func == 'smape':
-        class SMAPE(nn.Module):
-            def __init__(self):
-                super(SMAPE, self).__init__()
-            def forward(self, pred, true):
-                return torch.mean(200 * torch.abs(pred - true) / (torch.abs(pred) + torch.abs(true) + 1e-8))
         criterion = SMAPE()
     
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-8)
@@ -289,6 +290,7 @@ for ii in range(args.itr):
         iter_count = 0
         train_loss = []
         train_loss_mae = []
+        train_loss_smape = []
 
         epoch_time = time.time()
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, seq_trend, seq_seasonal, seq_resid) in tqdm(enumerate(train_loader),total = len(train_loader)):
@@ -342,11 +344,11 @@ for ii in range(args.itr):
         
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
-        train_loss = np.average(train_loss)
         train_loss_rmse = np.average(np.sqrt(train_loss))
+        train_loss = np.average(train_loss)
         train_loss_mae = np.average(train_loss_mae)
 
-        vali_loss, vali_loss_mae, vali_loss_rmse = vali(model, vali_data, vali_loader, criterion, args, device, ii)
+        vali_loss, vali_loss_mae, vali_loss_rmse, vali_loss_mse_by_horizon, vali_loss_mae_by_horizon, vali_loss_smape_by_horizon = vali(model, vali_data, vali_loader, criterion, args, device, ii)
        
         print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: MSE: {3:.7f} RMSE: {4:.7f} MAE: {5:.7f}".format(
             epoch + 1, train_steps, train_loss, vali_loss, vali_loss_rmse, vali_loss_mae))
@@ -356,6 +358,17 @@ for ii in range(args.itr):
                 f.write(f"Epoch: {epoch + 1}; TrainMSE: {train_loss}; TrainRMSE: {train_loss_rmse}; TrainMAE: {train_loss_mae}; ValiMSE: {vali_loss}; ValRMSE: {vali_loss_rmse}; ValMAE: {vali_loss_mae}")
                 f.write("\n")
             
+            vali_loss_rmse_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
+            
+            for pred_len in range(1, args.pred_len + 1):
+                vali_loss_rmse_by_horizon[pred_len] = np.average(np.sqrt(vali_loss_mse_by_horizon[pred_len]))
+                vali_loss_mse_by_horizon[pred_len] = np.average(vali_loss_mse_by_horizon[pred_len])
+                vali_loss_mae_by_horizon[pred_len] = np.average(vali_loss_mae_by_horizon[pred_len])
+                vali_loss_smape_by_horizon[pred_len] = np.average(vali_loss_smape_by_horizon[pred_len])
+
+                f.write(f"pred_len: {pred_len}; MSE: {vali_loss_mse_by_horizon[pred_len]}; RMSE: {vali_loss_rmse_by_horizon[pred_len]}; MAE: {vali_loss_mae_by_horizon[pred_len]}; SMAPE: {vali_loss_smape_by_horizon[pred_len]}")
+                f.write("\n")
+        
         if args.cos:
             scheduler.step()
             print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
@@ -366,18 +379,21 @@ for ii in range(args.itr):
             print("Early stopping")
             break
     
-
-    best_model_path = path + '/' + 'checkpoint.pth'
-    model.load_state_dict(torch.load(best_model_path), strict=False)
-    print("------------------------------------")
-    mse, mae = test(model, test_data, test_loader, args, device, ii)
-    torch.cuda.empty_cache()
-    print('test on the ' + str(args.target_data) + ' dataset: mse:' + str(mse) + ' mae:' + str(mae))
     
-    mses.append(mse)
-    maes.append(mae)
-print("mse_mean = {:.4f}, mse_std = {:.4f}".format(np.mean(mses), np.std(mses)))
-print("mae_mean = {:.4f}, mae_std = {:.4f}".format(np.mean(maes), np.std(maes)))
+    if is_ecg_data:
+        best_model_path = path + '/' + 'checkpoint.pth'
+        model.load_state_dict(torch.load(best_model_path), strict=False)
+        print("------------------------------------")
+        mse, mae = test(model, test_data, test_loader, args, device, ii)
+        torch.cuda.empty_cache()
+        print('test on the ' + str(args.target_data) + ' dataset: mse:' + str(mse) + ' mae:' + str(mae))
+        
+        mses.append(mse)
+        maes.append(mae)
+
+if is_ecg_data:
+    print("mse_mean = {:.4f}, mse_std = {:.4f}".format(np.mean(mses), np.std(mses)))
+    print("mae_mean = {:.4f}, mae_std = {:.4f}".format(np.mean(maes), np.std(maes)))
 
 #     mses_s.append(mse_s)
 #     maes_s.append(mae_s)

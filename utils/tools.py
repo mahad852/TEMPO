@@ -13,6 +13,12 @@ from utils.metrics import metric
 
 plt.switch_backend('agg')
 
+class SMAPE(nn.Module):
+    def __init__(self):
+        super(SMAPE, self).__init__()
+    def forward(self, pred, true):
+        return torch.mean(200 * torch.abs(pred - true) / (torch.abs(pred) + torch.abs(true) + 1e-8))
+
 def adjust_learning_rate(optimizer, epoch, args):
     # lr = args.learning_rate * (0.2 ** (epoch // 2))
     # if args.decay_fac is None:
@@ -253,6 +259,12 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
     total_loss = []
     total_loss_mae = []
 
+    loss_mse_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
+    loss_mae_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
+    loss_smape_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
+
+    criterion_smape = SMAPE()
+
     if args.model == 'PatchTST' or args.model == 'DLinear' or args.model == 'TCN' or args.model == 'NLinear' or args.model == 'NLinear_multi':
         model.eval()
     elif args.model == 'TEMPO' or args.model == 'TEMPO_t5' or 'multi' in args.model:
@@ -304,9 +316,15 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
             total_loss.append(loss)
             total_loss_mae.append(nn.functional.l1_loss(pred, true))
 
+            for pred_len in range(1, args.pred_len + 1):
+                gt, out =  true[:, :pred_len, :], pred[:, :pred_len, :]
+                loss_mse_by_horizon[pred_len].append(nn.functional.mse_loss(gt, out))
+                loss_mae_by_horizon[pred_len].append(nn.functional.l1_loss(gt, out))
+                loss_smape_by_horizon[pred_len].append(criterion_smape(gt, out))
+
+    total_loss_rmse = np.average(np.sqrt(total_loss))
     total_loss = np.average(total_loss)
     total_loss_mae = np.average(total_loss_mae)
-    total_loss_rmse = np.average(np.sqrt(total_loss))
 
     if args.model == 'PatchTST' or args.model == 'DLinear' or args.model == 'TCN' or  args.model == 'NLinear' or  args.model == 'NLinear_multi':
         model.train()
@@ -322,7 +340,7 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
         model.out_layer.train()
     else:
         model.train()
-    return total_loss, total_loss_mae, total_loss_rmse
+    return total_loss, total_loss_mae, total_loss_rmse, loss_mse_by_horizon, loss_mae_by_horizon, loss_smape_by_horizon
 
 def vali_ecg_tempo(model, vali_data, vali_loader, criterion, args, device, itr):
     total_loss = []

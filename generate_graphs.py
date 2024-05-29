@@ -42,12 +42,16 @@ def read_data(fpath):
     return pred_lens, mses, rmses, maes, smapes
 
 def plot_graph(x, y, path, title, x_label, y_label):
-    plt.plot(x, y)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.savefig(path)
-    plt.clf()
+    fig = plt.figure()
+    ax = fig.add_subplot()
+
+    ax.plot(x, y)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    
+    fig.savefig(path)
+    # plt.clf()
 
 def plot_all_data(pred_lens, mses, rmses, maes, smapes, graph_identifier):
     root_dir = os.path.join("graphs", graph_identifier)

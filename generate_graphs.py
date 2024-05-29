@@ -31,7 +31,7 @@ def read_data(fpath):
         if "pred_len" not in line.split(";")[0].strip():
             raise Exception(f"First component in file {fpath} must be pred_len")
         
-        pred_lens.append((line.split(";")[0].strip().split(":")[1].strip()))
+        pred_lens.append(int(line.split(";")[0].strip().split(":")[1].strip()))
 
         mses.append(float(line.split(";")[1].strip().split(":")[1].strip()))
         rmses.append(float(line.split(";")[2].strip().split(":")[1].strip()))

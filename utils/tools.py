@@ -259,9 +259,11 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
     total_loss = []
     total_loss_mae = []
 
-    loss_mse_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
-    loss_mae_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
-    loss_smape_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
+    loss_mse_by_horizon = {pred_len : 0.0 for pred_len in range(1, args.pred_len + 1)}
+    loss_rmse_by_horizon = {pred_len : 0.0 for pred_len in range(1, args.pred_len + 1)}
+    loss_mae_by_horizon = {pred_len : 0.0 for pred_len in range(1, args.pred_len + 1)}
+    loss_smape_by_horizon = {pred_len : 0.0 for pred_len in range(1, args.pred_len + 1)}
+    total_batches = 0
 
     criterion_smape = SMAPE()
 
@@ -316,11 +318,16 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
             total_loss.append(loss)
             total_loss_mae.append(nn.functional.l1_loss(pred, true))
 
+            total_batches += 1
+
             for pred_len in range(1, args.pred_len + 1):
                 gt, out =  true[:, :pred_len, :], pred[:, :pred_len, :]
-                loss_mse_by_horizon[pred_len].append(nn.functional.mse_loss(gt, out))
-                loss_mae_by_horizon[pred_len].append(nn.functional.l1_loss(gt, out))
-                loss_smape_by_horizon[pred_len].append(criterion_smape(gt, out))
+
+                loss_mse_by_horizon[pred_len] += nn.functional.mse_loss(gt, out)
+                loss_rmse_by_horizon[pred_len] += torch.sqrt(nn.functional.mse_loss(gt, out))
+                loss_mae_by_horizon[pred_len] += nn.functional.l1_loss(gt, out)
+                loss_smape_by_horizon[pred_len] += criterion_smape(gt, out)
+                
 
     total_loss_rmse = np.average(np.sqrt(total_loss))
     total_loss = np.average(total_loss)
@@ -340,7 +347,15 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
         model.out_layer.train()
     else:
         model.train()
-    return total_loss, total_loss_mae, total_loss_rmse, loss_mse_by_horizon, loss_mae_by_horizon, loss_smape_by_horizon
+
+
+    for pred_len in range(1, args.pred_len + 1):
+        loss_mse_by_horizon[pred_len] /= total_batches
+        loss_mae_by_horizon[pred_len] /= total_batches
+        loss_smape_by_horizon[pred_len] /= total_batches
+        loss_rmse_by_horizon[pred_len] /= total_batches
+
+    return total_loss, total_loss_mae, total_loss_rmse, loss_mse_by_horizon, loss_rmse_by_horizon, loss_mae_by_horizon, loss_smape_by_horizon
 
 def vali_ecg_tempo(model, vali_data, vali_loader, criterion, args, device, itr):
     total_loss = []

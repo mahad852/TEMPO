@@ -348,23 +348,17 @@ for ii in range(args.itr):
         train_loss = np.average(train_loss)
         train_loss_mae = np.average(train_loss_mae)
 
-        vali_loss, vali_loss_mae, vali_loss_rmse, vali_loss_mse_by_horizon, vali_loss_mae_by_horizon, vali_loss_smape_by_horizon = vali(model, vali_data, vali_loader, criterion, args, device, ii)
+        vali_loss, vali_loss_mae, vali_loss_rmse, vali_loss_mse_by_horizon, vali_loss_rmse_by_horizon, vali_loss_mae_by_horizon, vali_loss_smape_by_horizon = vali(model, vali_data, vali_loader, criterion, args, device, ii)
        
         print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: MSE: {3:.7f} RMSE: {4:.7f} MAE: {5:.7f}".format(
             epoch + 1, train_steps, train_loss, vali_loss, vali_loss_rmse, vali_loss_mae))
         
         if is_ecg_data:
-            vali_loss_rmse_by_horizon = {pred_len : [] for pred_len in range(1, args.pred_len + 1)}
             with open(model_log_fpath, "a") as f:
                 f.write(f"Epoch: {epoch + 1}; TrainMSE: {train_loss}; TrainRMSE: {train_loss_rmse}; TrainMAE: {train_loss_mae}; ValiMSE: {vali_loss}; ValRMSE: {vali_loss_rmse}; ValMAE: {vali_loss_mae}")
                 f.write("\n")
         
                 for pred_len in range(1, args.pred_len + 1):
-                    vali_loss_rmse_by_horizon[pred_len] = np.average(np.sqrt(vali_loss_mse_by_horizon[pred_len]))
-                    vali_loss_mse_by_horizon[pred_len] = np.average(vali_loss_mse_by_horizon[pred_len])
-                    vali_loss_mae_by_horizon[pred_len] = np.average(vali_loss_mae_by_horizon[pred_len])
-                    vali_loss_smape_by_horizon[pred_len] = np.average(vali_loss_smape_by_horizon[pred_len])
-
                     f.write(f"pred_len: {pred_len}; MSE: {vali_loss_mse_by_horizon[pred_len]}; RMSE: {vali_loss_rmse_by_horizon[pred_len]}; MAE: {vali_loss_mae_by_horizon[pred_len]}; SMAPE: {vali_loss_smape_by_horizon[pred_len]}")
                     f.write("\n")
         

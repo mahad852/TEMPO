@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 
 
-models = ["CustomLSTM", "CustomLSTM"]
+models = ["CustomLSTM", "CustomLSTM", "CustomLSTM"]
 seq_lens = [64, 3200, 128]
 forecast_lens = [64, 64, 64]
 

@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 
 models = ["CustomLSTM", "CustomLSTM"]
-seq_lens = [64, 3200]
-forecast_lens = [64, 64]
+seq_lens = [64, 3200, 128]
+forecast_lens = [64, 64, 64]
 
 
 res_files = [os.path.join("logs", "ecg_mit", f"{models[i]}_{seq_lens[i]}_{forecast_lens[i]}.txt") for i in range(len(seq_lens))]

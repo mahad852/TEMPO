@@ -54,7 +54,7 @@ python main_multi_6domain_release.py \
     --label_len 168 \
     --pred_len $pred_len \
     --prompt $prompt\
-    --batch_size 256 \
+    --batch_size 64 \
     --learning_rate $lr \
     --train_epochs 10 \
     --decay_fac 0.5 \

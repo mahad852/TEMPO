@@ -17,11 +17,11 @@ model=CustomLSTM #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
 
-for seq_len in 64 128 256 384 512 640 720 1600 3200 
+for seq_len in 720
 do
 for percent in 100 #5 10
 do
-for pred_len in 64 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
+for pred_len in 1 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
 do
 for tmax in 20
 do

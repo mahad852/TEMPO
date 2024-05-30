@@ -12,15 +12,16 @@
 #SBATCH --error=outputs/ecg_mit.err
 #SBATCH --constraint=gpu80
 
-seq_len=64
+# seq_len=3200
 model=CustomLSTM #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
 
-
+for seq_len in 64 128 256 384 512 640 720 1600 3200 
+do
 for percent in 100 #5 10
 do
-for pred_len in 1 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
+for pred_len in 64 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
 do
 for tmax in 20
 do
@@ -53,9 +54,9 @@ python main_multi_6domain_release.py \
     --label_len 168 \
     --pred_len $pred_len \
     --prompt $prompt\
-    --batch_size 64 \
+    --batch_size 256 \
     --learning_rate $lr \
-    --train_epochs 1 \
+    --train_epochs 10 \
     --decay_fac 0.5 \
     --d_model 768 \
     --n_heads 4 \
@@ -72,7 +73,7 @@ python main_multi_6domain_release.py \
     --cos 1 \
     --is_gpt 1 #>> logs/$model/loar_revin_$percent'_'percent'_'$prompt'_'prompt'_'equal'_'$equal/ettm2_pmt1_no_pool_$model'_'$gpt_layer/test'_'$seq_len'_'$pred_len'_lr'$lr.log
 
-
+done
 done
 done
 done

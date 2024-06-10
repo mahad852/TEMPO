@@ -34,11 +34,12 @@ for p_len in range(1, pred_len + 1):
 
 for i, (x, y) in enumerate(single_loader(dataset)):
     forecast = []
+    y = np.array(y)
+
     for sample in x:
         forecast.append(np.ones(y.shape[0]) * np.mean(sample))
     
     forecast = np.array(forecast)
-    y = np.array(y)
 
     mse = mean_squared_error(y, forecast)
     rmse = np.sqrt(mse)

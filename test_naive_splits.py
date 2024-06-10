@@ -37,7 +37,7 @@ for i, (x, y) in enumerate(single_loader(dataset)):
     y = np.array(y)
 
     for sample in x:
-        forecast.append(np.ones(y.shape[0]) * np.mean(sample))
+        forecast.append(np.ones(y.shape[-1]) * np.mean(sample))
     
     forecast = np.array(forecast)
 

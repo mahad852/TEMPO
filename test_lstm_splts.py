@@ -26,7 +26,7 @@ device = torch.device("cuda")
 
 model = CustomLSTM(context_len, pred_len)
 model.load_state_dict(torch.load(model_checkpoint), strict=False)
-model = model.to(device)
+model = model.to(device=device)
 
 model.eval()
 
@@ -46,10 +46,9 @@ for p_len in range(1, pred_len + 1):
     mae_by_pred_len[p_len] = 0.0
 
 for i, (x, y) in enumerate(single_loader(dataset)):
-    forecast = model(torch.tensor(x, device=device).unsqueeze(-1))[:, -pred_len:, :]
+    forecast = model(torch.tensor(np.array(x), device=device).unsqueeze(-1))[:, -pred_len:, :]
     
-    y = torch.tensor(y).unsqueeze(-1)[:, -pred_len:, :]
-    
+    y = torch.tensor(y).unsqueeze(-1)[:, -pred_len:, :].to(device=device)
 
     mse = nn.functional.mse_loss(y, forecast).item()
     rmse = np.sqrt(mse)

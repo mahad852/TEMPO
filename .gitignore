@@ -30,3 +30,4 @@ logs/*
 lora_revin_*
 graphs/*
 lstm_512_64/*
+lstm_720_1/*

@@ -12,7 +12,7 @@ pred_len = 1
 
 # ecg_dataset = ECG_MIT(context_len=context_len, pred_len=pred_len, data_path="/home/user/MIT-BIH.npz")
 data_path = "/home/user/MIT-BIH_720_1_many.npz"
-model_checkpoint = "lstm_512_64/checkpoint.pth"
+model_checkpoint = "lstm_720_1/checkpoint.pth"
 
 def single_loader(dataset):
     for i in range(len(dataset.files)):

@@ -324,7 +324,6 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
                 gt, out =  true[:, :pred_len, :], pred[:, :pred_len, :]
 
                 loss_mse_by_horizon[pred_len] += nn.functional.mse_loss(gt, out)
-                loss_rmse_by_horizon[pred_len] += torch.sqrt(nn.functional.mse_loss(gt, out))
                 loss_mae_by_horizon[pred_len] += nn.functional.l1_loss(gt, out)
                 loss_smape_by_horizon[pred_len] += criterion_smape(gt, out)
                 
@@ -353,7 +352,7 @@ def vali(model, vali_data, vali_loader, criterion, args, device, itr):
         loss_mse_by_horizon[pred_len] /= total_batches
         loss_mae_by_horizon[pred_len] /= total_batches
         loss_smape_by_horizon[pred_len] /= total_batches
-        loss_rmse_by_horizon[pred_len] /= total_batches
+        loss_rmse_by_horizon[pred_len] = np.sqrt(loss_mse_by_horizon[pred_len])
 
     return total_loss, total_loss_mae, total_loss_rmse, loss_mse_by_horizon, loss_rmse_by_horizon, loss_mae_by_horizon, loss_smape_by_horizon
 

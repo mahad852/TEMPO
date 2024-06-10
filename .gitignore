@@ -28,4 +28,5 @@ __MACOSX
 *.pk
 logs/*
 lora_revin_*
+graphs/*
 

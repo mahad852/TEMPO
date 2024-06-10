@@ -79,50 +79,62 @@ class Dataset_ECG_MIT(Dataset):
         print("self.data_x = {}".format(self.data_x.shape))
         self.tot_len = len(self.data_x) - self.seq_len - self.pred_len + 1
         
-       
+    # def stl_resolve(self, data_raw, data_name):
+    #     """
+    #     STL Global Decomposition
+    #     """
+    #     # self.data_name = 'etth1'
+    #     self.data_name = data_name
+    #     save_stl = stl_position + self.data_name   
+    #     # save_stl = 'stl/' + 'weather'   
+
+    #     self.save_stl = save_stl
+    #     trend_pk = self.save_stl + '/trend.pk'
+    #     seasonal_pk = self.save_stl + '/seasonal.pk'
+    #     resid_pk = self.save_stl + '/resid.pk'
+    #     if os.path.isfile(trend_pk) and os.path.isfile(seasonal_pk) and os.path.isfile(resid_pk):
+    #         with open(trend_pk, 'rb') as f:
+    #             trend_stamp = pickle.load(f)
+    #         with open(seasonal_pk, 'rb') as f:
+    #             seasonal_stamp = pickle.load(f)
+    #         with open(resid_pk, 'rb') as f:
+    #             resid_stamp = pickle.load(f)
+    #     else:
+    #         os.makedirs(self.save_stl, exist_ok=True)
+
+    #         [n,m] = data_raw.shape
+
+    #         trend_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
+    #         seasonal_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
+    #         resid_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
+
+    #         cols = data_raw.columns
+    #         for i, col in enumerate(cols):
+    #             df = data_raw[col]
+    #             res = STL(df, period = 250).fit()
+
+    #             trend_stamp[:, i] = torch.tensor(np.array(res.trend.values), dtype=torch.float32)
+    #             seasonal_stamp[:, i] = torch.tensor(np.array(res.seasonal.values), dtype=torch.float32)
+    #             resid_stamp[:, i] = torch.tensor(np.array(res.resid.values), dtype=torch.float32)
+    #         with open(trend_pk, 'wb') as f:
+    #             pickle.dump(trend_stamp, f)
+    #         with open(seasonal_pk, 'wb') as f:
+    #             pickle.dump(seasonal_stamp, f)
+    #         with open(resid_pk, 'wb') as f:
+    #             pickle.dump(resid_stamp, f)
+    #     return trend_stamp, seasonal_stamp, resid_stamp
+    
     def stl_resolve(self, data_raw, data_name):
         """
         STL Global Decomposition
         """
         # self.data_name = 'etth1'
-        self.data_name = data_name
-        save_stl = stl_position + self.data_name   
-        # save_stl = 'stl/' + 'weather'   
 
-        self.save_stl = save_stl
-        trend_pk = self.save_stl + '/trend.pk'
-        seasonal_pk = self.save_stl + '/seasonal.pk'
-        resid_pk = self.save_stl + '/resid.pk'
-        if os.path.isfile(trend_pk) and os.path.isfile(seasonal_pk) and os.path.isfile(resid_pk):
-            with open(trend_pk, 'rb') as f:
-                trend_stamp = pickle.load(f)
-            with open(seasonal_pk, 'rb') as f:
-                seasonal_stamp = pickle.load(f)
-            with open(resid_pk, 'rb') as f:
-                resid_stamp = pickle.load(f)
-        else:
-            os.makedirs(self.save_stl, exist_ok=True)
+        [_,m] = data_raw.shape
 
-            [n,m] = data_raw.shape
-
-            trend_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
-            seasonal_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
-            resid_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
-
-            cols = data_raw.columns
-            for i, col in enumerate(cols):
-                df = data_raw[col]
-                res = STL(df, period = 250).fit()
-
-                trend_stamp[:, i] = torch.tensor(np.array(res.trend.values), dtype=torch.float32)
-                seasonal_stamp[:, i] = torch.tensor(np.array(res.seasonal.values), dtype=torch.float32)
-                resid_stamp[:, i] = torch.tensor(np.array(res.resid.values), dtype=torch.float32)
-            with open(trend_pk, 'wb') as f:
-                pickle.dump(trend_stamp, f)
-            with open(seasonal_pk, 'wb') as f:
-                pickle.dump(seasonal_stamp, f)
-            with open(resid_pk, 'wb') as f:
-                pickle.dump(resid_stamp, f)
+        trend_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
+        seasonal_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
+        resid_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
         return trend_stamp, seasonal_stamp, resid_stamp
 
 

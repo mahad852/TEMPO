@@ -17,11 +17,11 @@ model=CustomLSTM #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
 
-for seq_len in 720
+for seq_len in 128 256 384 512 640 1600 3200
 do
 for percent in 100 #5 10
 do
-for pred_len in 1 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
+for pred_len in 64 #96 #192 336 720 #96 #720 #336 #192 #336 #720 #96 #720 #96 #96 #336 #192 #96 #336 96 # 96 192
 do
 for tmax in 20
 do
@@ -56,7 +56,7 @@ python main_multi_6domain_release.py \
     --prompt $prompt\
     --batch_size 64 \
     --learning_rate $lr \
-    --train_epochs 10 \
+    --train_epochs 1 \
     --decay_fac 0.5 \
     --d_model 768 \
     --n_heads 4 \

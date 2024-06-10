@@ -155,7 +155,7 @@ for ii in range(args.itr):
     # if args.freq == 0:
     #     args.freq = 'h'
     
-    device = torch.device('cuda:0')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     train_data_name = args.datasets.split(',')
     print(train_data_name)
@@ -344,8 +344,8 @@ for ii in range(args.itr):
         
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
-        train_loss_rmse = np.average(np.sqrt(train_loss))
         train_loss = np.average(train_loss)
+        train_loss_rmse = np.sqrt(train_loss)
         train_loss_mae = np.average(train_loss_mae)
 
         vali_loss, vali_loss_mae, vali_loss_rmse, vali_loss_mse_by_horizon, vali_loss_rmse_by_horizon, vali_loss_mae_by_horizon, vali_loss_smape_by_horizon = vali(model, vali_data, vali_loader, criterion, args, device, ii)
@@ -378,7 +378,9 @@ for ii in range(args.itr):
         model.load_state_dict(torch.load(best_model_path), strict=False)
         print("------------------------------------")
         mse, mae = test(model, test_data, test_loader, args, device, ii)
-        torch.cuda.empty_cache()
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         print('test on the ' + str(args.target_data) + ' dataset: mse:' + str(mse) + ' mae:' + str(mae))
         
         mses.append(mse)

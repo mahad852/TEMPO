@@ -11,7 +11,7 @@ context_len = 512
 pred_len = 64
 
 # ecg_dataset = ECG_MIT(context_len=context_len, pred_len=pred_len, data_path="/home/user/MIT-BIH.npz")
-data_path = "/home/user/MIT-BIH-splits.npz"
+data_path = "/home/mali2/datasets/ecg/MIT-BIH-splits.npz"
 # model_checkpoint = "lstm_512_64/checkpoint.pth"
 model_checkpoint = "lstm_checkpoint_200/ECG_MIT_TEMPO_6_prompt_learn_512_64_100_sl336_ll168_pl64_dm768_nh4_el3_gl6_df768_ebtimeF_itr0/checkpoint.pth"
 
@@ -23,7 +23,7 @@ def single_loader(dataset):
         yield [x], [y]
 
 dataset = np.load(data_path)
-device = torch.device("cpu")
+device = torch.device("cuda")
 
 model = CustomLSTM(context_len, pred_len)
 model.load_state_dict(torch.load(model_checkpoint), strict=False)

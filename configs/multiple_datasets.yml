@@ -112,7 +112,7 @@ datasets:
     percent: 100
 
   ecg_mit:
-    root_path: ../datasets/mit-bih-arrhythmia-database-1.0.0/
+    root_path: ../datasets/ecg/
     data_path: ETTh1.csv
     data_name: ecg_mit
     data: ecg_mit

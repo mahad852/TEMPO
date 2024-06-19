@@ -17,7 +17,7 @@ model=CustomLSTM #TEMPO #PatchTST #_multi
 electri_multiplier=1
 traffic_multiplier=1
 
-for seq_len in 128 256 384 512 640 1600 3200
+for seq_len in 512 720
 do
 for percent in 100 #5 10
 do

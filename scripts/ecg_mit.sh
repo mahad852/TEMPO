@@ -46,7 +46,7 @@ python main_multi_6domain_release.py \
     --config_path ./configs/multiple_datasets.yml \
     --stl_weight 0.001 \
     --equal $equal \
-    --checkpoint ./lora_revin_6domain_checkpoints'_'$prompt/ \
+    --checkpoint ./lstm_checkpoint_200 \
     --model_id ECG_MIT_TEMPO'_'$gpt_layer'_'prompt_learn'_'$seq_len'_'$pred_len'_'$percent \
     --electri_multiplier $electri_multiplier \
     --traffic_multiplier $traffic_multiplier \
@@ -56,7 +56,7 @@ python main_multi_6domain_release.py \
     --prompt $prompt\
     --batch_size 64 \
     --learning_rate $lr \
-    --train_epochs 1 \
+    --train_epochs 200 \
     --decay_fac 0.5 \
     --d_model 768 \
     --n_heads 4 \

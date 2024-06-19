@@ -7,7 +7,8 @@ context_len = 512
 pred_len = 64
 
 # ecg_dataset = ECG_MIT(context_len=context_len, pred_len=pred_len, data_path="/home/user/MIT-BIH.npz")
-data_path = "/home/user/MIT-BIH-splits.npz"
+# data_path = "/home/user/MIT-BIH-splits.npz"
+data_path = "/Users/ma649596/Downloads/MIT-BIH_lagllama_512_64_forecast.npz"
 
 def single_loader(dataset):
     for i in range(1, len(dataset.files), 2):
@@ -37,7 +38,12 @@ for i, (x, y) in enumerate(single_loader(dataset)):
     y = np.array(y)
 
     for sample in x:
-        forecast.append(np.ones(y.shape[-1]) * np.mean(sample))
+        sample_mean = np.mean(sample)
+        sample_last = sample[-1]
+
+        forecast.append(np.array([sample_last * (1 - t/y.shape[-1]) + sample_mean * (t/y.shape[-1]) for t in range(y.shape[-1])]))
+
+        # forecast.append(np.ones(y.shape[-1]) * sample[-1])
     
     forecast = np.array(forecast)
 
@@ -67,7 +73,7 @@ for p_len in range(1, pred_len + 1):
 if not os.path.exists("logs"):
     os.mkdir("logs")
 
-with open(os.path.join("logs", f"Naive_{context_len}_{pred_len}_split.csv"), "w") as f:
+with open(os.path.join("logs", f"Naive_Intelligent_{context_len}_{pred_len}_split.csv"), "w") as f:
     f.write("context_len,horizon_len,MSE,RMSE,MAE\n")
     for p_len in range(1, pred_len + 1):
         f.write(f"{context_len},{p_len},{mse_by_pred_len[p_len]},{rmse_by_pred_len[p_len]},{mae_by_pred_len[p_len]}")

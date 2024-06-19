@@ -77,7 +77,7 @@ for p_len in range(1, pred_len + 1):
 if not os.path.exists("logs"):
     os.mkdir("logs")
 
-with open(os.path.join("logs", f"LSTM_{context_len}_{pred_len}_split.csv"), "w") as f:
+with open(os.path.join("logs", f"LSTM_{context_len}_{pred_len}_split_200.csv"), "w") as f:
     f.write("context_len,horizon_len,MSE,RMSE,MAE\n")
     for p_len in range(1, pred_len + 1):
         f.write(f"{context_len},{p_len},{mse_by_pred_len[p_len]},{rmse_by_pred_len[p_len]},{mae_by_pred_len[p_len]}")

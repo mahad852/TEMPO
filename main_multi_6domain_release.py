@@ -69,7 +69,7 @@ parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=0)
 parser.add_argument('--train_epochs', type=int, default=10)
 parser.add_argument('--lradj', type=str, default='type3') # for what
-parser.add_argument('--patience', type=int, default=5)
+parser.add_argument('--patience', type=int, default=20)
 
 parser.add_argument('--gpt_layers', type=int, default=6)
 parser.add_argument('--is_gpt', type=int, default=1)

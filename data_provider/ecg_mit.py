@@ -10,7 +10,6 @@ from utils.tools import convert_tsf_to_dataframe
 import warnings
 from pathlib import Path
 import pickle
-import wfdb
 from statsmodels.tsa.seasonal import STL
 import time
 from scipy import signal
@@ -78,52 +77,7 @@ class Dataset_ECG_MIT(Dataset):
         print("self.enc_in = {}".format(self.enc_in))
         print("self.data_x = {}".format(self.data_x.shape))
         self.tot_len = len(self.data_x) - self.seq_len - self.pred_len + 1
-        
-    # def stl_resolve(self, data_raw, data_name):
-    #     """
-    #     STL Global Decomposition
-    #     """
-    #     # self.data_name = 'etth1'
-    #     self.data_name = data_name
-    #     save_stl = stl_position + self.data_name   
-    #     # save_stl = 'stl/' + 'weather'   
-
-    #     self.save_stl = save_stl
-    #     trend_pk = self.save_stl + '/trend.pk'
-    #     seasonal_pk = self.save_stl + '/seasonal.pk'
-    #     resid_pk = self.save_stl + '/resid.pk'
-    #     if os.path.isfile(trend_pk) and os.path.isfile(seasonal_pk) and os.path.isfile(resid_pk):
-    #         with open(trend_pk, 'rb') as f:
-    #             trend_stamp = pickle.load(f)
-    #         with open(seasonal_pk, 'rb') as f:
-    #             seasonal_stamp = pickle.load(f)
-    #         with open(resid_pk, 'rb') as f:
-    #             resid_stamp = pickle.load(f)
-    #     else:
-    #         os.makedirs(self.save_stl, exist_ok=True)
-
-    #         [n,m] = data_raw.shape
-
-    #         trend_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
-    #         seasonal_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
-    #         resid_stamp = torch.zeros([len(data_raw), m], dtype=torch.float32)
-
-    #         cols = data_raw.columns
-    #         for i, col in enumerate(cols):
-    #             df = data_raw[col]
-    #             res = STL(df, period = 250).fit()
-
-    #             trend_stamp[:, i] = torch.tensor(np.array(res.trend.values), dtype=torch.float32)
-    #             seasonal_stamp[:, i] = torch.tensor(np.array(res.seasonal.values), dtype=torch.float32)
-    #             resid_stamp[:, i] = torch.tensor(np.array(res.resid.values), dtype=torch.float32)
-    #         with open(trend_pk, 'wb') as f:
-    #             pickle.dump(trend_stamp, f)
-    #         with open(seasonal_pk, 'wb') as f:
-    #             pickle.dump(seasonal_stamp, f)
-    #         with open(resid_pk, 'wb') as f:
-    #             pickle.dump(resid_stamp, f)
-    #     return trend_stamp, seasonal_stamp, resid_stamp
-    
+            
     def stl_resolve(self, data_raw, data_name):
         """
         STL Global Decomposition
@@ -143,31 +97,21 @@ class Dataset_ECG_MIT(Dataset):
         
         cols = []
         data = None
-        with np.load(os.path.join(self.root_path, "MIT-BIH.npz")) as d:
-            data = np.zeros(shape = (650000, len(d.files)))
-            cols = d.files
-            for i, file in enumerate(d.files):
-                data[:, i] = d[file]
+        use_split_data = True
 
-        # total = 0
-        # for file in os.listdir(self.root_path):
-        #     if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
-        #         total += 1
+        if self.pred_len + self.seq_len == 721 and use_split_data:
+            with np.load(os.path.join(self.root_path, "MIT-BIH_720_1_many.npz")) as d:
+                data = np.zeros(shape = (721, len(d.files)))
+                cols = d.files
+                for i, file in enumerate(d.files):
+                    data[:, i] = d[file]
+        else:
+            with np.load(os.path.join(self.root_path, "MIT-BIH.npz")) as d:
+                data = np.zeros(shape = (650000, len(d.files)))
+                cols = d.files
+                for i, file in enumerate(d.files):
+                    data[:, i] = d[file]
 
-        # cols = []
-        # data = np.zeros(shape = (650000, total))
-
-        # i = 0
-        # for file in os.listdir(self.root_path):
-        #     if len(file.split('.')) > 1 and file.split('.')[-1] == 'dat':
-        #         fname = file.split('.')[0]
-        #         record = wfdb.rdrecord(os.path.join(self.root_path, fname))
-        #         data[:, i] = preprocess(record.__dict__["p_signal"][:, 0])
-        #         # data[:, i + 1] = record.__dict__["p_signal"][:, 1]
-                
-        #         cols.extend(list(map(lambda s : f"{fname}_{s}", record.__dict__["sig_name"][:1])))
-        #         i += 1
-        
         df_raw = pd.DataFrame(data, columns=cols)
 
         train_percentage = 0.30
@@ -176,31 +120,25 @@ class Dataset_ECG_MIT(Dataset):
         num_rows = df_raw.shape[0]
 
         if self.set_type == 0:
-            # border1, border2 = 0, int(num_columns * train_percentage)
-            border1, border2 = 0, int(num_rows * train_percentage)
+            border1, border2 = 0, int(num_columns * train_percentage)
+            # border1, border2 = 0, int(num_rows * train_percentage)
         elif self.set_type == 1:
-            # border1, border2 = int(num_columns * train_percentage), num_columns
-            border1, border2 = int(num_rows * train_percentage), num_rows
+            border1, border2 = int(num_columns * train_percentage), num_columns
+            # border1, border2 = int(num_rows * train_percentage), num_rows
         elif self.set_type == 2:
-            # border1, border2 = int(num_columns * train_percentage), num_columns
-            border1, border2 = int(num_rows * train_percentage), num_rows
+            border1, border2 = int(num_columns * train_percentage), num_columns
+            # border1, border2 = int(num_rows * train_percentage), num_rows
         
-        df_data = df_raw.iloc[border1:border2, :]
+        # df_data = df_raw.iloc[border1:border2, :]
+        df_data = df_raw.iloc[:, border1:border2]
 
         data = df_data.values
 
         curr_time = time.time() * 1000
         time_step = (1/360) * 1000
-        # data_stamp = pd.to_datetime([curr_time + (i * time_step) for i in range(1, 650001)], unit='ms').values
         data_stamp = torch.tensor([curr_time + (i * time_step) for i in range(1, 650001)])
         
-        # After we get data, we do the stl resolve
         trend_stamp, seasonal_stamp, resid_stamp = self.stl_resolve(data_raw=df_raw, data_name=self.data_name)
-        # end -dove
-
-        # if self.timeenc == 1:
-        #     data_stamp = time_features(data_stamp, freq=self.freq)
-        #     data_stamp = data_stamp.transpose(1, 0)
 
         self.data_x = data
         self.data_y = data

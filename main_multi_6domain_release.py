@@ -134,7 +134,6 @@ is_ecg_data = 'ecg_mit' in args.datasets.split(',')
 if is_ecg_data and not os.path.exists(os.path.join("logs", "ecg_mit")):
     os.makedirs(os.path.join("logs", "ecg_mit"))
 
-print(args.model, args.seq_len, args.pred_len)
 model_log_fname = f"{args.model}_{args.seq_len}_{args.pred_len}.txt"
 model_log_fpath = os.path.join("logs", "ecg_mit", model_log_fname)
 

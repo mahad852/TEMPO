@@ -11,7 +11,7 @@ context_len = 720
 pred_len = 1
 
 # ecg_dataset = ECG_MIT(context_len=context_len, pred_len=pred_len, data_path="/home/user/MIT-BIH.npz")
-data_path = "/home/user/MIT-BIH_720_1_many.npz"
+data_path = "/home/mali2/datasets/ecg/MIT-BIH_720_1_many.npz"
 # model_checkpoint = "lstm_720_1/checkpoint.pth"
 model_checkpoint = "lstm_checkpoint_200/ECG_MIT_TEMPO_6_prompt_learn_720_1_100_sl336_ll168_pl1_dm768_nh4_el3_gl6_df768_ebtimeF_itr0/checkpoint.pth"
 

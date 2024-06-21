@@ -121,7 +121,7 @@ class Dataset_ECG_MIT(Dataset):
         num_rows = df_raw.shape[0]
 
         if self.set_type == 0:
-            indices = random.sample(range(num_columns), num_columns * train_percentage)
+            indices = random.sample(range(num_columns), int(num_columns * train_percentage))
         else:
             indices = random.sample(range(num_columns), num_columns)
 

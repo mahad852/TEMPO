@@ -14,6 +14,7 @@ from statsmodels.tsa.seasonal import STL
 import time
 from scipy import signal
 from scipy.signal import medfilt
+import random
 
 warnings.filterwarnings('ignore')
 
@@ -120,17 +121,23 @@ class Dataset_ECG_MIT(Dataset):
         num_rows = df_raw.shape[0]
 
         if self.set_type == 0:
-            border1, border2 = 0, int(num_columns * train_percentage)
-            # border1, border2 = 0, int(num_rows * train_percentage)
-        elif self.set_type == 1:
-            border1, border2 = int(num_columns * train_percentage), num_columns
-            # border1, border2 = int(num_rows * train_percentage), num_rows
-        elif self.set_type == 2:
-            border1, border2 = int(num_columns * train_percentage), num_columns
-            # border1, border2 = int(num_rows * train_percentage), num_rows
+            indices = random.sample(range(num_columns), num_columns * train_percentage)
+        else:
+            indices = random.sample(range(num_columns), num_columns)
+
+        # if self.set_type == 0:
+        #     border1, border2 = 0, int(num_columns * train_percentage)
+        #     # border1, border2 = 0, int(num_rows * train_percentage)
+        # elif self.set_type == 1:
+        #     border1, border2 = int(num_columns * train_percentage), num_columns
+        #     # border1, border2 = int(num_rows * train_percentage), num_rows
+        # elif self.set_type == 2:
+        #     border1, border2 = int(num_columns * train_percentage), num_columns
+        #     # border1, border2 = int(num_rows * train_percentage), num_rows
         
         # df_data = df_raw.iloc[border1:border2, :]
-        df_data = df_raw.iloc[:, border1:border2]
+
+        df_data = df_raw.iloc[:, indices]
 
         data = df_data.values
 
